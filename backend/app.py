@@ -20,5 +20,8 @@ app.register_blueprint(auth_bp, url_prefix = '/api/auth')
 app.register_blueprint(carbon_bp, url_prefix = '/api/carbon')
 app.register_blueprint(transaction_bp, url_prefix = '/api/transaction')
 
+with app.app_context():
+    db.create_all()
+
 if __name__ == '__main__':
     app.run(debug=True)
