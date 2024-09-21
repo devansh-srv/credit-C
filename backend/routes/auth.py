@@ -17,14 +17,14 @@ def register():
     new_user = User(username = username, email= email, role = data.get('role', 'buyer'))
     new_user.set_password(password)
     db.session.add(new_user)
-    db.commit()
+    db.session.commit()
     return jsonify({"message":"User created successfully"}),200
 
 @auth_bp.route('/login', methods = ['POST'])
 def login():
     data = request.get_json()
-    user = data.query.filter_by(email = email).first()
-    if not user or not user.check_passeword(data.get('password')):
+    user = User.query.filter_by(email = data.get('email')).first()
+    if not user or not user.check_password(data.get('password')):
         return jsonify({"error":"Invalid credentials"}),401
     access_token = create_access_token(identity = user.id)
     return jsonify(access_token = access_token),200
