@@ -19,10 +19,11 @@ def create_transaction():
     if current_user.role != 'buyer':
         return jsonify({"error":"Unauthorized access"}),403
     data = request.get_json()
-    carbon_credit = CarbonCredit.query.get(data.get('carbon_credit_id'))
-
+    carbon_credit_id = data.get('carbon_credit_id')
+    print(f"{carbon_credit_id}")
+    carbon_credit = CarbonCredit.query.filter_by(credit_id = carbon_credit_id).first()
     if not carbon_credit:
-        return jsonify({"error": "Carbon credit not found"}), 404
+        return jsonify({"message":"credit not found"}),404
 
     if carbon_credit.owner_id == current_user.id:
         return jsonify({"error": "You cannot buy your own carbon credits"}), 400
@@ -34,7 +35,7 @@ def create_transaction():
     )
     #take ownership
     carbon_credit.owner_id = current_user.id
-    db.session.add(new_transcation)
+    db.session.add(new_transaction)
     db.session.commit()
     return jsonify({"message":"New Transaction Created"}),201
 

@@ -18,7 +18,7 @@ def register():
     new_user.set_password(password)
     db.session.add(new_user)
     db.session.commit()
-    return jsonify({"message":"User created successfully"}),200
+    return jsonify(new_user.serialize()),200
 
 @auth_bp.route('/login', methods = ['POST'])
 def login():

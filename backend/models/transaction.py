@@ -9,7 +9,7 @@ class Transaction(db.Model):
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     def serialize(self):
         return {
-            'id': self.id,
+            'transaction_id': self.id,
             'sender_id': self.sender_id,
             'receiver_id': self.receiver_id,
             'carbon_credit_id': self.carbon_credit_id,

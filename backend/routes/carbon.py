@@ -15,8 +15,7 @@ def get_current_user():
 @jwt_required()
 def create_carbon_credits():
     current_user = get_current_user()
-    print(current_user)
-    if current_user.role not in ['admin', 'company']:
+    if current_user.role not in ['admin']:
         return jsonify({"error":"Unauthorized access"}),403
     data = request.get_json()
     new_credit = CarbonCredit(

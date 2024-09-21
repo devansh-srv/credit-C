@@ -16,3 +16,11 @@ class User(db.Model):
     def check_password(self,password):
         return check_password_hash(self.password_hash,password)
 
+    def serialize(self):
+        return {
+            'user_id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'role': self.role,
+        }
+

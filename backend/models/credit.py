@@ -8,8 +8,8 @@ class CarbonCredit(db.Model):
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     def serialize(self):
         return {
-            'id': self.id,
             'credit_id': self.credit_id,
+            'owner_id': self.owner_id,
             'quantity': self.quantity,
             'created_at': self.created_at,
         }

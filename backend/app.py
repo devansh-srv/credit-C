@@ -15,7 +15,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = secrets.token_urlsafe(32) 
 CORS(app)
-app.config['JWT_SECRET_KEY'] = "1d3b5c4a2954c1d15880c3a45005dfe9"
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)  
 jwt = JWTManager(app)
