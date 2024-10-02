@@ -11,11 +11,11 @@ const AdminSignup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await signup({ ...formData, role: 'admin' }); // or 'buyer' for BuyerSignup
-      // Handle successful signup (e.g., show success message, redirect to login)
+      await signup({ ...formData, role: 'admin' }); 
+      
     } catch (error) {
       console.error('Signup failed:', error);
-      // Handle error (e.g., show error message to user)
+      
     }
   };
 
