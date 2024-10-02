@@ -8,18 +8,18 @@ from datetime import timedelta
 app = Flask(__name__)
 CORS(app)
 
-# Configuration
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///carbon_credits.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'your-secret-key'  # Change this to a secure secret key
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 
-# Initialize extensions
+
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
-# Models
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -39,7 +39,18 @@ class PurchasedCredit(db.Model):
     credit_id = db.Column(db.Integer, db.ForeignKey('credit.id'), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
 
-# Routes
+class Transactions(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    buyer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    credit_id = db.Column(db.Integer, db.ForeignKey('credit.id'), nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    total_price = db.Column(db.Float, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+
+    buyer = db.relationship('User', backref='transactions')
+    credit = db.relationship('Credit', backref='transactions')
+
+
 @app.route('/api/signup', methods=['POST'])
 def signup():
     data = request.json
@@ -92,7 +103,17 @@ def purchase_credit():
         user = User.query.filter_by(username=current_user['username']).first()
         purchased_credit = PurchasedCredit(user_id=user.id, credit_id=credit.id, amount=data['amount'])
         credit.amount -= data['amount']
+        
+       
+        transaction = Transactions(
+            buyer_id=user.id,
+            credit_id=credit.id,
+            amount=data['amount'],
+            total_price=credit.price * data['amount']
+        )
+        
         db.session.add(purchased_credit)
+        db.session.add(transaction)
         db.session.commit()
         return jsonify({"message": "Credit purchased successfully"}), 200
     return jsonify({"message": "Invalid purchase"}), 400
@@ -113,6 +134,26 @@ def get_purchased_credits():
             "price": credit.price
         })
     return jsonify(credits)
+
+@app.route('/api/admin/transactions', methods=['GET'])
+@jwt_required()
+def get_transactions():
+    current_user = get_jwt_identity()
+    if current_user['role'] != 'admin':
+        return jsonify({"message": "Unauthorized"}), 403
+
+    transactions = Transactions.query.order_by(Transactions.timestamp.desc()).all()
+    transaction_list = []
+    for t in transactions:
+        transaction_list.append({
+            "id": t.id,
+            "buyer": t.buyer.username,
+            "credit": t.credit.name,
+            "amount": t.amount,
+            "total_price": t.total_price,
+            "timestamp": t.timestamp.isoformat()
+        })
+    return jsonify(transaction_list)
 
 if __name__ == '__main__':
     with app.app_context():
