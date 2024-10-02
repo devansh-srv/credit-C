@@ -1,0 +1,120 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from datetime import timedelta
+
+app = Flask(__name__)
+CORS(app)
+
+# Configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///carbon_credits.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JWT_SECRET_KEY'] = 'your-secret-key'  # Change this to a secure secret key
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
+
+# Initialize extensions
+db = SQLAlchemy(app)
+bcrypt = Bcrypt(app)
+jwt = JWTManager(app)
+
+# Models
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(20), nullable=False)
+
+class Credit(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Float, nullable=False)
+
+class PurchasedCredit(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    credit_id = db.Column(db.Integer, db.ForeignKey('credit.id'), nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+
+# Routes
+@app.route('/api/signup', methods=['POST'])
+def signup():
+    data = request.json
+    hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
+    new_user = User(username=data['username'], email=data['email'], password=hashed_password, role=data['role'])
+    db.session.add(new_user)
+    db.session.commit()
+    return jsonify({"message": "User created successfully"}), 201
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.json
+    user = User.query.filter_by(username=data['username']).first()
+    if user and bcrypt.check_password_hash(user.password, data['password']):
+        access_token = create_access_token(identity={"username": user.username, "role": user.role})
+        return jsonify(access_token=access_token), 200
+    return jsonify({"message": "Invalid credentials"}), 401
+
+@app.route('/api/admin/credits', methods=['GET', 'POST'])
+@jwt_required()
+def admin_credits():
+    current_user = get_jwt_identity()
+    if current_user['role'] != 'admin':
+        return jsonify({"message": "Unauthorized"}), 403
+
+    if request.method == 'GET':
+        credits = Credit.query.all()
+        return jsonify([{"id": c.id, "name": c.name, "amount": c.amount, "price": c.price} for c in credits])
+    
+    if request.method == 'POST':
+        data = request.json
+        new_credit = Credit(name=data['name'], amount=data['amount'], price=data['price'])
+        db.session.add(new_credit)
+        db.session.commit()
+        return jsonify({"message": "Credit created successfully"}), 201
+
+@app.route('/api/buyer/credits', methods=['GET'])
+@jwt_required()
+def buyer_credits():
+    credits = Credit.query.all()
+    return jsonify([{"id": c.id, "name": c.name, "amount": c.amount, "price": c.price} for c in credits])
+
+@app.route('/api/buyer/purchase', methods=['POST'])
+@jwt_required()
+def purchase_credit():
+    current_user = get_jwt_identity()
+    data = request.json
+    credit = Credit.query.get(data['credit_id'])
+    if credit and credit.amount >= data['amount']:
+        user = User.query.filter_by(username=current_user['username']).first()
+        purchased_credit = PurchasedCredit(user_id=user.id, credit_id=credit.id, amount=data['amount'])
+        credit.amount -= data['amount']
+        db.session.add(purchased_credit)
+        db.session.commit()
+        return jsonify({"message": "Credit purchased successfully"}), 200
+    return jsonify({"message": "Invalid purchase"}), 400
+
+@app.route('/api/buyer/purchased', methods=['GET'])
+@jwt_required()
+def get_purchased_credits():
+    current_user = get_jwt_identity()
+    user = User.query.filter_by(username=current_user['username']).first()
+    purchased_credits = PurchasedCredit.query.filter_by(user_id=user.id).all()
+    credits = []
+    for pc in purchased_credits:
+        credit = Credit.query.get(pc.credit_id)
+        credits.append({
+            "id": credit.id,
+            "name": credit.name,
+            "amount": pc.amount,
+            "price": credit.price
+        })
+    return jsonify(credits)
+
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True)
