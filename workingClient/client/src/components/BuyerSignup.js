@@ -1,95 +1,83 @@
-import React, { useState, useEffect } from 'react';
-import { getBuyerCredits, purchaseCredit, getPurchasedCredits } from '../api/api';
+import React, { useState } from 'react';
+import { signup } from '../api/api';
 
+const BuyerSignup = () => {
+  const [formData, setFormData] = useState({ username: '', email: '', password: '' });
 
-const BuyerDashboard = ({ onLogout }) => {
-  const [availableCredits, setAvailableCredits] = useState([]);
-  const [purchasedCredits, setPurchasedCredits] = useState([]);
-  useEffect(() => {
-    const fetchCredits = async () => {
-      try {
-        const [availableResponse, purchasedResponse] = await Promise.all([
-          getBuyerCredits(),
-          getPurchasedCredits()
-        ]);
-        setAvailableCredits(availableResponse.data);
-        setPurchasedCredits(purchasedResponse.data);
-      } catch (error) {
-        console.error('Failed to fetch credits:', error);
-      }
-    };
-    fetchCredits();
-  }, []);
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-  const handleBuyCredit = async (creditId) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      await purchaseCredit({ credit_id: creditId, amount: 1 });
+      await signup({ ...formData, role: 'admin' }); 
       
-      const [availableResponse, purchasedResponse] = await Promise.all([
-        getBuyerCredits(),
-        getPurchasedCredits()
-      ]);
-      setAvailableCredits(availableResponse.data);
-      setPurchasedCredits(purchasedResponse.data);
     } catch (error) {
-      console.error('Failed to purchase credit:', error);
+      console.error('Signup failed:', error);
+      
     }
   };
 
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-      <div className="px-4 py-5 sm:px-6">
-        <h3 className="text-lg leading-6 font-medium text-gray-900">Buyer Dashboard</h3>
-        <p className="mt-1 max-w-2xl text-sm text-gray-500">View and purchase carbon credits</p>
-      </div>
-      <div className="border-t border-gray-200">
-        <dl>
-          <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-            <dt className="text-sm font-medium text-gray-500">Available Credits</dt>
-            <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-              <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
-                {availableCredits.map((credit) => (
-                  <li key={credit.id} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
-                    <div className="w-0 flex-1 flex items-center">
-                      <span className="ml-2 flex-1 w-0 truncate">
-                        {credit.name} - Amount: {credit.amount}, Price: ${credit.price}
-                      </span>
-                    </div>
-                    <div className="ml-4 flex-shrink-0">
-                      <button onClick={() => handleBuyCredit(credit.id)} className="btn btn-secondary">
-                        Buy
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </dd>
-          </div>
-          <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-            <dt className="text-sm font-medium text-gray-500">Purchased Credits</dt>
-            <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-              <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
-                {purchasedCredits.map((credit, index) => (
-                  <li key={index} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
-                    <div className="w-0 flex-1 flex items-center">
-                      <span className="ml-2 flex-1 w-0 truncate">
-                        {credit.name} - Amount: {credit.amount}, Price: ${credit.price}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </dd>
-          </div>
-        </dl>
-      </div>
-      <div className="px-4 py-3 bg-gray-50 text-right sm:px-6">
-        <button onClick={onLogout} className="btn btn-secondary">
-          Logout
-        </button>
+    <div className="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl">
+      <div className="md:flex">
+        <div className="p-8 w-full">
+          <div className="uppercase tracking-wide text-sm text-secondary font-semibold mb-1">Buyer Registration</div>
+          <h2 className="block mt-1 text-lg leading-tight font-medium text-black">Create a buyer account</h2>
+          <form onSubmit={handleSubmit} className="mt-6">
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
+                Username
+              </label>
+              <input
+                className="input"
+                id="username"
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+                Email
+              </label>
+              <input
+                className="input"
+                id="email"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="mb-6">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+                Password
+              </label>
+              <input
+                className="input"
+                id="password"
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <button className="btn btn-secondary" type="submit">
+                Sign Up
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
 };
 
-export default BuyerDashboard;
+export default BuyerSignup;
