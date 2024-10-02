@@ -19,7 +19,7 @@ const Login = ({ onLogin }) => {
       navigate(formData.role === 'admin' ? '/admin-dashboard' : '/buyer-dashboard');
     } catch (error) {
       console.error('Login failed:', error);
-      // Handle error (e.g., show error message to user)
+      
     }
   };
 
