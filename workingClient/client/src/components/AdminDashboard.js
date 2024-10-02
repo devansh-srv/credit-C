@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAdminCredits, createAdminCredit } from '../api/api';
+import { getAdminCredits, createAdminCredit, getTransactions } from '../api/api';
 
 
 const AdminDashboard = ({ onLogout }) => {
@@ -31,6 +31,23 @@ const AdminDashboard = ({ onLogout }) => {
   const handleInputChange = (e) => {
     setNewCredit({ ...newCredit, [e.target.name]: e.target.value });
   };
+
+  const [transactions, setTransactions] = useState([]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [creditsResponse, transactionsResponse] = await Promise.all([
+          getAdminCredits(),
+          getTransactions()
+        ]);
+        setAvailableCredits(creditsResponse.data);
+        setTransactions(transactionsResponse.data);
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      }
+    };
+    fetchData();
+  }, []);
 
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -97,6 +114,22 @@ const AdminDashboard = ({ onLogout }) => {
         <button onClick={onLogout} className="btn btn-secondary">
           Logout
         </button>
+      </div>
+      <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+        <dt className="text-sm font-medium text-gray-500">Transactions</dt>
+        <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+          <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
+            {transactions.map((transaction) => (
+              <li key={transaction.id} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
+                <div className="w-0 flex-1 flex items-center">
+                  <span className="ml-2 flex-1 w-0 truncate">
+                    Buyer: {transaction.buyer}, Credit: {transaction.credit}, Amount: {transaction.amount}, Total Price: ${transaction.total_price}, Date: {new Date(transaction.timestamp).toLocaleString()}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </dd>
       </div>
     </div>
   );
