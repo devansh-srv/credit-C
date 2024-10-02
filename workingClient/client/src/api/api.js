@@ -24,5 +24,6 @@ export const createAdminCredit = (creditData) => api.post('/admin/credits', cred
 export const getBuyerCredits = () => api.get('/buyer/credits');
 export const purchaseCredit = (purchaseData) => api.post('/buyer/purchase', purchaseData);
 export const getPurchasedCredits = () => api.get('/buyer/purchased');
+export const getTransactions = () => api.get('/admin/transactions');
 
 export default api;
