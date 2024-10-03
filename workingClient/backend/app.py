@@ -39,6 +39,8 @@ class PurchasedCredit(db.Model):
     credit_id = db.Column(db.Integer, db.ForeignKey('credit.id'), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
 
+    purchase_date = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+
 class Transactions(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     buyer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -101,10 +103,13 @@ def purchase_credit():
     credit = Credit.query.get(data['credit_id'])
     if credit and credit.amount >= data['amount']:
         user = User.query.filter_by(username=current_user['username']).first()
-        purchased_credit = PurchasedCredit(user_id=user.id, credit_id=credit.id, amount=data['amount'])
+        purchased_credit = PurchasedCredit(
+            user_id=user.id, 
+            credit_id=credit.id, 
+            amount=data['amount']
+        )
         credit.amount -= data['amount']
         
-       
         transaction = Transactions(
             buyer_id=user.id,
             credit_id=credit.id,
@@ -124,6 +129,7 @@ def get_purchased_credits():
     current_user = get_jwt_identity()
     user = User.query.filter_by(username=current_user['username']).first()
     purchased_credits = PurchasedCredit.query.filter_by(user_id=user.id).all()
+    purchase_date = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
     credits = []
     for pc in purchased_credits:
         credit = Credit.query.get(pc.credit_id)
@@ -154,6 +160,43 @@ def get_transactions():
             "timestamp": t.timestamp.isoformat()
         })
     return jsonify(transaction_list)
+
+@app.route('/api/buyer/generate-certificate/<int:purchase_id>', methods=['GET'])
+@jwt_required()
+def generate_certificate(purchase_id):
+    current_user = get_jwt_identity()
+    user = User.query.filter_by(username=current_user['username']).first()
+    
+    purchased_credit = PurchasedCredit.query.filter_by(id=purchase_id, user_id=user.id).first()
+    if not purchased_credit:
+        return jsonify({"message": "Purchase not found"}), 404
+    
+    credit = Credit.query.get(purchased_credit.credit_id)
+    
+    certificate_data = {
+        "certificate_id": f"CC-{purchase_id}-{user.id}",
+        "buyer_name": user.username,
+        "credit_name": credit.name,
+        "amount": purchased_credit.amount,
+        "purchase_date": purchased_credit.purchase_date.strftime("%Y-%m-%d"),
+        "certificate_html": f"""
+            <div style="border: 2px solid #2c3e50; padding: 20px; max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+                <h1 style="text-align: center; color: #2c3e50;">Carbon Credit Certificate</h1>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <p>This certifies that</p>
+                    <h2>{user.username}</h2>
+                    <p>has purchased</p>
+                    <h3>{purchased_credit.amount} {credit.name}</h3>
+                    <p>on {purchased_credit.purchase_date.strftime("%B %d, %Y")}</p>
+                </div>
+                <div style="margin-top: 40px; text-align: center;">
+                    <p>Certificate ID: CC-{purchase_id}-{user.id}</p>
+                </div>
+            </div>
+        """
+    }
+    
+    return jsonify(certificate_data), 200
 
 if __name__ == '__main__':
     with app.app_context():

@@ -25,5 +25,6 @@ export const getBuyerCredits = () => api.get('/buyer/credits');
 export const purchaseCredit = (purchaseData) => api.post('/buyer/purchase', purchaseData);
 export const getPurchasedCredits = () => api.get('/buyer/purchased');
 export const getTransactions = () => api.get('/admin/transactions');
+export const generateCertificate = (purchaseId) => api.get(`/buyer/generate-certificate/${purchaseId}`);
 
 export default api;
