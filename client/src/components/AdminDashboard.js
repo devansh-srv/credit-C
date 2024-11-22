@@ -27,7 +27,7 @@ const AdminDashboard = ({ onLogout }) => {
     };
     fetchCredits();
   }, []);
-  const [newCredit, setNewCredit] = useState({ name: '', amount: 0, price: 0 });
+  const [newCredit, setNewCredit] = useState({ name: '', amount: null, price: null });
   // const [amount, setAmount] = useState("");
   // const [price, setPrice] = useState("");
 
