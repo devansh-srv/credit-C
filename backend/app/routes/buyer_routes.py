@@ -12,7 +12,7 @@ buyer_bp = Blueprint('buyer_bp', __name__)
 @buyer_bp.route('/api/buyer/credits', methods=['GET'])
 @jwt_required()
 def buyer_credits():
-    credits = Credit.query.all()
+    credits = Credit.query.filter_by(is_active =True).all()
     return jsonify([{"id": c.id, "name": c.name, "amount": c.amount, "price": c.price} for c in credits])
 
 @buyer_bp.route('/api/buyer/purchase', methods=['POST'])
@@ -21,22 +21,22 @@ def purchase_credit():
     current_user = get_jwt_identity()
     data = request.json
     credit = Credit.query.get(data['credit_id'])
-    if credit and credit.amount >= data['amount']:
+    if credit :
         user = User.query.filter_by(username=current_user['username']).first()
         purchased_credit = PurchasedCredit(
             user_id=user.id, 
             credit_id=credit.id, 
-            amount=data['amount']
+            amount=credit.amount
         )
-        credit.amount -= data['amount']
         
         transaction = Transactions(
             buyer_id=user.id,
             credit_id=credit.id,
-            amount=data['amount'],
-            total_price=credit.price * data['amount']
+            amount=credit.amount,
+            total_price=credit.price 
         )
-        
+        credit.is_active = False
+        # db.session.delete(credit)
         db.session.add(purchased_credit)
         db.session.add(transaction)
         db.session.commit()
@@ -58,6 +58,7 @@ def get_purchased_credits():
             "amount": pc.amount,
             "price": credit.price
         })
+        db.session.delete(credit)
     return jsonify(credits)
 
 @buyer_bp.route('/api/buyer/generate-certificate/<int:purchase_id>', methods=['GET'])

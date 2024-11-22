@@ -14,7 +14,7 @@ def manage_credits():
         return jsonify({"message": "Unauthorized"}), 403
 
     if request.method == 'GET':
-        credits = Credit.query.all()
+        credits = Credit.query.filter_by(is_active = True).all()
         return jsonify([{"id": c.id, "name": c.name, "amount": c.amount, "price": c.price} for c in credits])
 
     if request.method == 'POST':
@@ -35,8 +35,8 @@ def get_transactions():
     for t in transactions:
         transaction_list.append({
             "id": t.id,
-            "buyer": t.buyer.username,
-            "credit": t.credit.name,
+            "buyer": t.buyer_id,
+            "credit": t.credit_id,
             "amount": t.amount,
             "total_price": t.total_price,
             "timestamp": t.timestamp.isoformat()
