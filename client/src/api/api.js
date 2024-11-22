@@ -9,13 +9,45 @@ const api = axios.create({
   },
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers['Authorization'] = `Bearer ${token}`;
+// Request interceptor for adding token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    console.log('Request config:', config); // Debugging log
+    return config;
+  },
+  (error) => {
+    console.error('Request error:', error);
+    return Promise.reject(error);
   }
-  return config;
-});
+);
+
+// Response interceptor for error handling
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response) {
+      switch (error.response.status) {
+        case 401:
+          // Only clear auth and redirect for explicit auth errors
+          if (error.response.data && error.response.data.error === 'invalid_token') {
+            localStorage.clear();
+            window.location.href = '/login';
+          }
+          break;
+        case 500:
+          console.error('Server error:', error.response.data);
+          break;
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const login = (credentials) => api.post('/login', credentials);
 export const signup = (userData) => api.post('/signup', userData);
