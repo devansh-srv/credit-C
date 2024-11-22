@@ -5,6 +5,10 @@ import BuyerSignup from './components/BuyerSignup';
 import Login from './components/Login';
 import AdminDashboard from './components/AdminDashboard';
 import BuyerDashboard from './components/BuyerDashboard';
+import TestPage from './components/testPage';
+
+import {CCProvider} from './context/SimpleSmartContract'
+
 
 const Navigation = ({ user, onLogout }) => (
   <nav className="bg-white shadow-md">
@@ -48,6 +52,7 @@ const App = () => {
   };
 
   return (
+    <CCProvider>
     <Router>
       <div className="min-h-screen bg-background">
         <Navigation user={user} onLogout={handleLogout} />
@@ -56,6 +61,7 @@ const App = () => {
             <Route path="/admin-signup" element={<AdminSignup />} />
             <Route path="/buyer-signup" element={<BuyerSignup />} />
             <Route path="/login" element={<Login onLogin={handleLogin} />} />
+            <Route path="/test" element={<TestPage/>}/>
             <Route 
               path="/admin-dashboard" 
               element={
@@ -77,6 +83,7 @@ const App = () => {
         </div>
       </div>
     </Router>
+    </CCProvider>
   );
 };
 

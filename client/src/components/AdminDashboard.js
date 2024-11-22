@@ -1,8 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { getAdminCredits, createAdminCredit, getTransactions } from '../api/api';
-
+import { CC_Context } from "../context/SimpleSmartContract.js";
+import { ethers } from "ethers";
 
 const AdminDashboard = ({ onLogout }) => {
+
+  const { 
+    connectWallet, 
+    generateCredit, 
+    getCreditDetails,
+    sellCredit,
+    buyCredit,
+    currentAccount, 
+    error 
+  } = useContext(CC_Context);
+
   const [availableCredits, setAvailableCredits] = useState([]);
   useEffect(() => {
     const fetchCredits = async () => {
@@ -16,10 +28,19 @@ const AdminDashboard = ({ onLogout }) => {
     fetchCredits();
   }, []);
   const [newCredit, setNewCredit] = useState({ name: '', amount: 0, price: 0 });
+  // const [amount, setAmount] = useState("");
+  // const [price, setPrice] = useState("");
 
   const handleCreateCredit = async (e) => {
     e.preventDefault();
+
+    if (!newCredit.name || !newCredit.amount || !newCredit.price) {
+      alert("Please fill in all fields!");
+      return;
+    }
+
     try {
+      await generateCredit(newCredit.amount, newCredit.price);
       const response = await createAdminCredit(newCredit);
       setAvailableCredits([...availableCredits, response.data]);
       setNewCredit({ name: '', amount: 0, price: 0 });
