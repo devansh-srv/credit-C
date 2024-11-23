@@ -18,7 +18,7 @@ contract SimpleCarbonCredit {
     error CreditDoesntExist();
 
     mapping(uint256 => Credit) public credits;
-    uint256 public nextCreditId;
+    uint256 nextCreditId;
 
     // Generate a new carbon credit
     function generateCredit(uint256 amount, uint256 price) external {
@@ -27,7 +27,7 @@ contract SimpleCarbonCredit {
             owner: msg.sender, // Creator becomes the owner
             expired: false,
             price: price,
-            forSale: false
+            forSale: true
         });
         nextCreditId++;
     }
@@ -92,5 +92,14 @@ contract SimpleCarbonCredit {
     // Get the owner of a credit
     function getOwner(uint256 creditId) external view returns (address) {
         return credits[creditId].owner;
+    }
+
+    // Get next credit ID
+    function getNextCreditId() external view returns (uint256) {
+        return nextCreditId;
+    }
+
+    function getPrice(uint256 creditId) external view returns (uint256) {
+        return credits[creditId].price; 
     }
 }

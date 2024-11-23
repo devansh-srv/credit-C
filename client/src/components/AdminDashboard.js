@@ -9,6 +9,7 @@ const AdminDashboard = ({ onLogout }) => {
     connectWallet, 
     generateCredit, 
     getCreditDetails,
+    getNextCreditId,
     sellCredit,
     buyCredit,
     currentAccount, 
@@ -27,7 +28,7 @@ const AdminDashboard = ({ onLogout }) => {
     };
     fetchCredits();
   }, []);
-  const [newCredit, setNewCredit] = useState({ name: '', amount: 0, price: 0 });
+  const [newCredit, setNewCredit] = useState({creditId:0, name: '', amount: 0, price: 0 });
   // const [amount, setAmount] = useState("");
   // const [price, setPrice] = useState("");
 
@@ -40,6 +41,10 @@ const AdminDashboard = ({ onLogout }) => {
     }
 
     try {
+      
+      let newCreditId = getNextCreditId();
+      setNewCredit((prevState) => ({ ...prevState, creditId: newCreditId }));
+
       await generateCredit(newCredit.amount, newCredit.price);
       const response = await createAdminCredit(newCredit);
       setAvailableCredits([...availableCredits, response.data]);

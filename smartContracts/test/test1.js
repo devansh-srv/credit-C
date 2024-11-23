@@ -19,7 +19,7 @@ describe("Carbon Credit", function(){
     const price = 1;
 
     await carbonCredit.generateCredit(amount, price);
-    let nextCreditId = await carbonCredit.nextCreditId();
+    let nextCreditId = await carbonCredit.getNextCreditId();
 
     const credit = await carbonCredit.credits(0);
 
@@ -27,7 +27,7 @@ describe("Carbon Credit", function(){
     expect(credit.amount).to.equal(amount);
     expect(credit.expired).to.be.false;
     expect(credit.price).to.equal(price);
-    expect(credit.forSale).to.be.false;
+    expect(credit.forSale).to.be.true;
 
     expect(nextCreditId).to.equal(1);
   });

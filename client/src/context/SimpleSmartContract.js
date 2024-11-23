@@ -191,6 +191,40 @@ export const CCProvider = ({ children }) => {
         }
     };
 
+    const getNextCreditId = async () => {
+        try{
+            const web3Modal = new Web3Modal();
+            const connection = await web3Modal.connect();
+            const provider = new ethers.BrowserProvider(connection);
+            const contract = fetchContract(provider);
+
+            const nextCreditId = await contract.getNextCreditId();
+
+            return nextCreditId;
+        } catch (error) {
+            console.error('Error getting next credit id:', error);
+            throw error;
+        }
+        
+    }
+
+    const getPrice = async (creditId) => {
+        try{
+            const web3Modal = new Web3Modal();
+            const connection = await web3Modal.connect();
+            const provider = new ethers.BrowserProvider(connection);
+            const contract = fetchContract(provider);
+
+            const price = await contract.getPrice(creditId);
+
+            return price;
+        } catch (error) {
+            console.error('Error getting price:', error);
+            throw error;
+        }
+        
+    }
+
     const checkIfWalletIsConnected = async () => {
         try {
             if (!window.ethereum) {
@@ -240,6 +274,8 @@ export const CCProvider = ({ children }) => {
                 getOwner,
                 isExpired,
                 getCreditDetails,
+                getNextCreditId,
+                getPrice,
                 error,
             }}
         >
