@@ -1,11 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { getBuyerCredits, purchaseCredit, getPurchasedCredits, generateCertificate } from '../api/api';
+import { CC_Context } from "../context/SimpleSmartContract.js";
+import { ethers } from "ethers";
 
 const BuyerDashboard = ({ onLogout }) => {
   const [availableCredits, setAvailableCredits] = useState([]);
   const [purchasedCredits, setPurchasedCredits] = useState([]);
   const [certificateData, setCertificateData] = useState(null);
   const [error, setError] = useState(null);
+
+  const { 
+    connectWallet, 
+    generateCredit, 
+    getCreditDetails,
+    getNextCreditId,
+    getPrice,
+    sellCredit,
+    buyCredit,
+    currentAccount
+    // error 
+  } = useContext(CC_Context);
 
   const fetchAllCredits = async () => {
     try {
@@ -28,6 +42,13 @@ const BuyerDashboard = ({ onLogout }) => {
   const handleBuyCredit = async (creditId) => {
     try {
       setError(null);
+      //NOTE: the -1 is temporary
+      // const price = await getPrice();
+      const credit = await getCreditDetails(creditId-1);
+      // Convert the price from wei to ether for the transaction
+      const priceInEther = ethers.formatEther(credit.price);
+      console.log("id, price: ", creditId-1, priceInEther);
+      await buyCredit(creditId-1, priceInEther);
       await purchaseCredit({ credit_id: creditId, amount: 1 });
       await fetchAllCredits(); // Refresh both available and purchased credits
     } catch (error) {
