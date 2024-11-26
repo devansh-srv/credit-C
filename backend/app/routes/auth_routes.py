@@ -22,21 +22,4 @@ def login():
         access_token = create_access_token(identity=identity)
         return jsonify(access_token=access_token), 200
     return jsonify({"message": "Invalid credentials"}), 401
-# def login():
-#     data = request.json
-#     user = User.query.filter_by(username=data['username']).first()
-#     if user and bcrypt.check_password_hash(user.password, data['password']):
-#         # Convert the identity to a string using json.dumps
-#         identity = json.dumps({"username": user.username, "role": user.role})
-#         access_token = create_access_token(identity=identity)
-#         return jsonify(access_token=access_token), 200
-#     return jsonify({"message": "Invalid credentials"}), 401
-# def login():
-#     data = request.json
-#     user = User.query.filter_by(username=data['username']).first()
-#     if user and bcrypt.check_password_hash(user.password, data['password']):
-#         # Convert the identity to a string using json.dumps
-#         identity = json.dumps({"username": user.username, "role": user.role})
-#         access_token = create_access_token(identity=identity)
-#         return jsonify(access_token=access_token), 200
-#     return jsonify({"message": "Invalid credentials"}), 401
+

@@ -6,7 +6,7 @@ import { CC_ADDRESS, CC_ABI } from "./constants";
 
 // FETCHING SMART CONTRACT
 const fetchContract = (signerOrProvider) =>
-  new ethers.Contract(CC_ADDRESS, CC_ABI, signerOrProvider);
+    new ethers.Contract(CC_ADDRESS, CC_ABI, signerOrProvider);
 
 export const CC_Context = React.createContext();
 
@@ -15,52 +15,52 @@ export const CCProvider = ({ children }) => {
     const [error, setError] = useState(null);
 
     const generateCredit = async (amount, price) => {
-      try {
-          setError(null); // Clear any previous errors
-          
-          const web3Modal = new Web3Modal();
-          const connection = await web3Modal.connect();
-          const provider = new ethers.BrowserProvider(connection);
-          const signer = await provider.getSigner();
-          const contract = fetchContract(signer);
+        try {
+            setError(null); // Clear any previous errors
 
-          // Convert price to Wei and amount to BigInt
-          const amountBig = ethers.getBigInt(amount);
-          const priceInWei = ethers.parseEther(price.toString());
+            const web3Modal = new Web3Modal();
+            const connection = await web3Modal.connect();
+            const provider = new ethers.BrowserProvider(connection);
+            const signer = await provider.getSigner();
+            const contract = fetchContract(signer);
 
-          // Estimate gas first to check if the transaction will fail
-          try {
-              await contract.generateCredit.estimateGas(amountBig, priceInWei);
-          } catch (estimateError) {
-              console.error("Gas estimation failed:", estimateError);
-              throw new Error("Transaction would fail. Please check your inputs.");
-          }
+            // Convert price to Wei and amount to BigInt
+            const amountBig = ethers.getBigInt(amount);
+            const priceInWei = ethers.parseEther(price.toString());
 
-          // If gas estimation succeeds, proceed with the transaction
-          const transaction = await contract.generateCredit(
-              amountBig,
-              priceInWei,
-              {
-                  gasLimit: 300000
-              }
-          );
+            // Estimate gas first to check if the transaction will fail
+            try {
+                await contract.generateCredit.estimateGas(amountBig, priceInWei);
+            } catch (estimateError) {
+                console.error("Gas estimation failed:", estimateError);
+                throw new Error("Transaction would fail. Please check your inputs.");
+            }
 
-          // Wait for the transaction to be mined
-          const receipt = await transaction.wait();
-          
-          // Verify the transaction was successful
-          if (receipt.status === 1) {
-              console.log("Credit generated successfully!", receipt);
-              return receipt;
-          } else {
-              throw new Error("Transaction failed!");
-          }
-      } catch (error) {
-          console.error("Error in generateCredit:", error);
-          setError(error.message || "Failed to generate credit");
-          throw error;
-      }
-  };
+            // If gas estimation succeeds, proceed with the transaction
+            const transaction = await contract.generateCredit(
+                amountBig,
+                priceInWei,
+                {
+                    gasLimit: 300000
+                }
+            );
+
+            // Wait for the transaction to be mined
+            const receipt = await transaction.wait();
+
+            // Verify the transaction was successful
+            if (receipt.status === 1) {
+                console.log("Credit generated successfully!", receipt);
+                return receipt;
+            } else {
+                throw new Error("Transaction failed!");
+            }
+        } catch (error) {
+            console.error("Error in generateCredit:", error);
+            setError(error.message || "Failed to generate credit");
+            throw error;
+        }
+    };
 
 
     const sellCredit = async (creditId, price) => {
@@ -81,7 +81,7 @@ export const CCProvider = ({ children }) => {
                     gasLimit: 300000
                 }
             );
-            
+
             const receipt = await transaction.wait();
             console.log("Credit listed for sale!", receipt);
             return receipt;
@@ -106,7 +106,7 @@ export const CCProvider = ({ children }) => {
                     gasLimit: 300000
                 }
             );
-            
+
             const receipt = await transaction.wait();
             console.log("Credit purchased!", receipt);
             return receipt;
@@ -130,7 +130,7 @@ export const CCProvider = ({ children }) => {
                     gasLimit: 300000
                 }
             );
-            
+
             const receipt = await transaction.wait();
             console.log('Credit removed from sale', receipt);
             return receipt;
@@ -192,7 +192,7 @@ export const CCProvider = ({ children }) => {
     };
 
     const getNextCreditId = async () => {
-        try{
+        try {
             const web3Modal = new Web3Modal();
             const connection = await web3Modal.connect();
             const provider = new ethers.BrowserProvider(connection);
@@ -205,11 +205,11 @@ export const CCProvider = ({ children }) => {
             console.error('Error getting next credit id:', error);
             throw error;
         }
-        
+
     }
 
     const getPrice = async (creditId) => {
-        try{
+        try {
             const web3Modal = new Web3Modal();
             const connection = await web3Modal.connect();
             const provider = new ethers.BrowserProvider(connection);
@@ -222,7 +222,7 @@ export const CCProvider = ({ children }) => {
             console.error('Error getting price:', error);
             throw error;
         }
-        
+
     }
 
     const checkIfWalletIsConnected = async () => {
@@ -234,7 +234,7 @@ export const CCProvider = ({ children }) => {
             const accounts = await window.ethereum.request({ method: 'eth_accounts' });
             if (accounts.length) {
                 setCurrentAccount(accounts[0]);
-                console.log("Curr: ",currentAccount);
+                console.log("Curr: ", currentAccount);
             }
         } catch (error) {
             console.error('Error checking wallet connection:', error);

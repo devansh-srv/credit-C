@@ -21,36 +21,6 @@ def buyer_credits():
     credits = Credit.query.filter_by(is_active =True).all()
     return jsonify([{"id": c.id, "name": c.name, "amount": c.amount, "price": c.price} for c in credits])
 
-# @buyer_bp.route('/api/buyer/purchase', methods=['POST'])
-# @jwt_required()
-# def purchase_credit():
-#     current_user = get_current_user()
-#     if not current_user:
-#         return jsonify({"message": "Invalid token"}), 401
-
-#     data = request.json
-#     credit = Credit.query.get(data['credit_id'])
-#     if credit:
-#         user = User.query.filter_by(username=current_user['username']).first()
-#         purchased_credit = PurchasedCredit(
-#             user_id=user.id, 
-#             credit_id=credit.id, 
-#             amount=credit.amount
-#         )
-        
-#         transaction = Transactions(
-#             buyer_id=user.id,
-#             credit_id=credit.id,
-#             amount=credit.amount,
-#             total_price=credit.price 
-#         )
-#         credit.is_active = False
-#         db.session.add(purchased_credit)
-#         db.session.add(transaction)
-#         db.session.commit()
-#         return jsonify({"message": "Credit purchased successfully"}), 200
-#     return jsonify({"message": "Invalid purchase"}), 400
-
 @buyer_bp.route('/api/buyer/purchase', methods=['POST'])
 @jwt_required()
 def purchase_credit():
