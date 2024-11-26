@@ -5,6 +5,7 @@ contract SimpleCarbonCredit {
 
     struct Credit {
         uint256 amount; // Amount of carbon offset (e.g., in tons)
+        address creator;
         address owner;  // Current owner of the credit
         bool expired;   // Expiry timestamp
         uint256 price;  // Price in wei (for selling)
@@ -16,6 +17,7 @@ contract SimpleCarbonCredit {
     error OnlyOwnerCanSell();
     error OnlyOwnerCanRemove();
     error CreditDoesntExist();
+    error OnlyCreatorCanExpire();
 
     mapping(uint256 => Credit) public credits;
     uint256 nextCreditId;
@@ -24,6 +26,7 @@ contract SimpleCarbonCredit {
     function generateCredit(uint256 amount, uint256 price) external {
         credits[nextCreditId] = Credit({
             amount: amount,
+            creator: msg.sender,
             owner: msg.sender, // Creator becomes the owner
             expired: false,
             price: price,
@@ -44,8 +47,13 @@ contract SimpleCarbonCredit {
             revert PriceNotMet();
         }
 
+        uint256 creator_share = (msg.value * 10)/100;
+        uint256 owner_share = msg.value - creator_share;
+
+        // Transfer fees to creator
+        payable (credit.creator).transfer(creator_share);
         // Transfer ETH to the seller
-        payable(credit.owner).transfer(msg.value);
+        payable(credit.owner).transfer(owner_share);
 
         // Transfer ownership to the buyer
         credit.owner = msg.sender;
@@ -71,7 +79,7 @@ contract SimpleCarbonCredit {
     // Remove a credit from sale
     function removeFromSale(uint256 creditId) external {
         Credit storage credit = credits[creditId];
-        // require(msg.sender == credit.owner, "Only owner can remove");
+        
         if(msg.sender != credit.owner){
             revert OnlyOwnerCanRemove();
         }
@@ -84,14 +92,21 @@ contract SimpleCarbonCredit {
         return credits[creditId].expired;
     }
 
-    // Check if the credit has expired
+    // Exprire the credits (can only be done by creator)
     function Expire(uint256 creditId) external{
+        if(msg.sender != credits[creditId].creator){
+            revert OnlyCreatorCanExpire();
+        }
         credits[creditId].expired = true;
     }
 
     // Get the owner of a credit
     function getOwner(uint256 creditId) external view returns (address) {
         return credits[creditId].owner;
+    }
+
+    function getCreator(uint256 creditId) external view returns (address) {
+        return credits[creditId].creator;
     }
 
     // Get next credit ID
