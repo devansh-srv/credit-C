@@ -91,9 +91,13 @@ def generate_certificate(purchase_id):
         return jsonify({"message": "Purchase not found"}), 404
 
     credit = Credit.query.get(purchased_credit.credit_id)
+    if credit is None:
+        return jsonify({"message":"No such credit found"}),404
     creator = User.query.get(purchased_credit.creator_id) if purchased_credit.creator_id else None
-
-    certificate_data = generate_certificate_data(purchase_id, user, purchased_credit, credit)
+    
+    certificate_data = generate_certificate_data(purchase_id, user, purchased_credit, credit) if credit.is_expired else None
+    if certificate_data is None:
+        return jsonify({"message":f"No credit with {credit.id} has expired"}), 404
     certificate_data['creator'] = {
         "id": creator.id,
         "username": creator.username,

@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.credit import Credit
-from app.models.transaction import Transactions
+from app.models.transaction import PurchasedCredit, Transactions
 from app.models.user import User
 import json
 admin_bp = Blueprint('admin', __name__)
@@ -55,7 +55,7 @@ def expire_credit(credit_id):
 
     user = User.query.filter_by(username=current_user.get('username')).first()
     credit = Credit.query.get(credit_id)
-
+    pc = PurchasedCredit.query.get(credit_id)
     if not credit:
         return jsonify({"message": "Credit not found"}), 404
 
@@ -66,6 +66,7 @@ def expire_credit(credit_id):
     # Expire the credit
     credit.is_active = False
     credit.is_expired = True
+    pc.is_expired = True
     db.session.commit()
     return jsonify({"message": "Credit expired successfully"}), 200
 
