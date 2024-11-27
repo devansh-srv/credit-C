@@ -140,6 +140,31 @@ export const CCProvider = ({ children }) => {
         }
     };
 
+    const expireCredit = async (creditId) => {
+        try{
+            const web3Modal = new Web3Modal();
+            const connection = await web3Modal.connect();
+            const provider = new ethers.BrowserProvider(connection);
+            const signer = await provider.getSigner();
+            const contract = fetchContract(signer);
+
+            const transaction = await contract.Expire(
+                creditId,
+                {
+                    gasLimit: 300000
+                }
+            );
+
+            const receipt = await transaction.wait();
+            console.log('Expired credit: ', receipt);
+            return receipt;
+        } catch (error) {
+            console.error('Can\'t expire credit:', error);
+            throw error;
+        }
+        
+    } 
+
     const isExpired = async (creditId) => {
         try {
             const web3Modal = new Web3Modal();
@@ -181,6 +206,7 @@ export const CCProvider = ({ children }) => {
             return {
                 amount: credit.amount,
                 owner: credit.owner,
+                creator: credit.creator,
                 expired: credit.expired,
                 price: credit.price,
                 forSale: credit.forSale
@@ -271,6 +297,7 @@ export const CCProvider = ({ children }) => {
                 sellCredit,
                 buyCredit,
                 removeFromSale,
+                expireCredit,
                 getOwner,
                 isExpired,
                 getCreditDetails,

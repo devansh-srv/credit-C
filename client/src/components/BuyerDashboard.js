@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { getBuyerCredits, purchaseCredit, getPurchasedCredits, generateCertificate } from '../api/api';
-import { CC_Context } from "../context/SimpleSmartContract.js";
+import { CC_Context } from "../context/SmartContractConnector.js";
 import { ethers } from "ethers";
 
 const BuyerDashboard = ({ onLogout }) => {

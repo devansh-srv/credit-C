@@ -26,5 +26,6 @@ export const purchaseCredit = (purchaseData) => api.post('/buyer/purchase', purc
 export const getPurchasedCredits = () => api.get('/buyer/purchased');
 export const getTransactions = () => api.get('/admin/transactions');
 export const generateCertificate = (purchaseId) => api.get(`/buyer/generate-certificate/${purchaseId}`);
+export const expireCreditApi = (expireCreditId) => api.patch(`/admin/credits/expire/${expireCreditId}`);
 
 export default api;

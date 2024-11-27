@@ -7,7 +7,7 @@ import AdminDashboard from './components/AdminDashboard';
 import BuyerDashboard from './components/BuyerDashboard';
 import TestPage from './components/testPage';
 
-import {CCProvider} from './context/SimpleSmartContract'
+import {CCProvider} from './context/SmartContractConnector'
 
 
 const Navigation = ({ user, onLogout }) => (

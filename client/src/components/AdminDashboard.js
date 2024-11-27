@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { getAdminCredits, createAdminCredit, getTransactions } from '../api/api';
-import { CC_Context } from "../context/SimpleSmartContract.js";
+import { getAdminCredits, createAdminCredit, getTransactions, expireCreditApi } from '../api/api';
+import { CC_Context } from "../context/SmartContractConnector.js";
 import { ethers } from "ethers";
 
 const AdminDashboard = ({ onLogout }) => {
@@ -10,27 +10,27 @@ const AdminDashboard = ({ onLogout }) => {
     generateCredit, 
     getCreditDetails,
     getNextCreditId,
+    expireCredit,
     sellCredit,
     buyCredit,
     currentAccount, 
     error 
   } = useContext(CC_Context);
 
-  const [availableCredits, setAvailableCredits] = useState([]);
+  const [myCredits, setMyCredits] = useState([]);
   useEffect(() => {
     const fetchCredits = async () => {
       try {
         const response = await getAdminCredits();
-        setAvailableCredits(response.data);
+        setMyCredits(response.data);
       } catch (error) {
         console.error('Failed to fetch credits:', error);
       }
     };
     fetchCredits();
   }, []);
+
   const [newCredit, setNewCredit] = useState({creditId:0, name: '', amount: 0, price: 0 });
-  // const [amount, setAmount] = useState("");
-  // const [price, setPrice] = useState("");
 
   const handleCreateCredit = async (e) => {
     e.preventDefault();
@@ -47,7 +47,11 @@ const AdminDashboard = ({ onLogout }) => {
 
       await generateCredit(newCredit.amount, newCredit.price);
       const response = await createAdminCredit(newCredit);
-      setAvailableCredits([...availableCredits, response.data]);
+
+      // Refetch the updated credit list after successful creation
+      const updatedCredits = await getAdminCredits();
+      setMyCredits(updatedCredits.data);
+
       setNewCredit({ name: '', amount: 0, price: 0 });
     } catch (error) {
       console.error('Failed to create credit:', error);
@@ -58,6 +62,29 @@ const AdminDashboard = ({ onLogout }) => {
     setNewCredit({ ...newCredit, [e.target.name]: e.target.value });
   };
 
+  
+  const handleExpireCredit = async (creditId) => {
+    console.log(`Expire credit called for credit ID: ${creditId}`);
+    const SC_Credit_Id = creditId -1;
+    // Add your API call or logic to expire the credit here
+    try{
+      // call the smart contract function 
+      await expireCredit(SC_Credit_Id);
+      const response = await expireCreditApi(creditId);
+      console.log(response.data);
+      alert('Credit expired successfully!');
+
+      setMyCredits((prevCredits) =>
+        prevCredits.map((credit) =>
+          credit.id === creditId ? { ...credit, is_expired: true } : credit
+        )
+      );
+
+    } catch(error){
+      console.error('Failed to create credit:', error);
+    }
+  };
+
   const [transactions, setTransactions] = useState([]);
   useEffect(() => {
     const fetchData = async () => {
@@ -66,7 +93,7 @@ const AdminDashboard = ({ onLogout }) => {
           getAdminCredits(),
           getTransactions()
         ]);
-        setAvailableCredits(creditsResponse.data);
+        setMyCredits(creditsResponse.data);
         setTransactions(transactionsResponse.data);
       } catch (error) {
         console.error('Failed to fetch data:', error);
@@ -74,7 +101,7 @@ const AdminDashboard = ({ onLogout }) => {
     };
     fetchData();
   }, []);
-
+  
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
       <div className="px-4 py-5 sm:px-6">
@@ -119,18 +146,34 @@ const AdminDashboard = ({ onLogout }) => {
             </dd>
           </div>
           <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-            <dt className="text-sm font-medium text-gray-500">Available Credits</dt>
+            <dt className="text-sm font-medium text-gray-500">My Credits</dt>
             <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
               <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
-                {availableCredits.map((credit) => (
-                  <li key={credit.id} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
-                    <div className="w-0 flex-1 flex items-center">
-                      <span className="ml-2 flex-1 w-0 truncate">
-                        {credit.name} - Amount: {credit.amount}, Price: ${credit.price}
-                      </span>
-                    </div>
-                  </li>
-                ))}
+              {myCredits.map((credit) => (
+              <li 
+                key={credit.id} 
+                className="pl-3 pr-4 py-3 flex items-center justify-between text-sm"
+                  style={{ backgroundColor: credit.is_expired ? '#D4EDDA' : 'transparent' }} // Replace with your green hex
+                >
+                  <div className="w-0 flex-1 flex items-center">
+                    <span className="ml-2 flex-1 w-0 truncate">
+                      {credit.id - 1}: {credit.name} - Amount: {credit.amount}, Price: {credit.price} ETH
+                    </span>
+                  </div>
+                {!credit.is_expired && (
+                  <button
+                    onClick={() => handleExpireCredit(credit.id)}
+                    className="ml-4 px-3 py-1 text-white rounded hover:opacity-90"
+                    style={{ backgroundColor: '#415e02' }} // Replace with your hex color
+                  >
+                    Expire Credit
+                </button>
+                )}
+              </li>
+            ))}
+
+
+
               </ul>
             </dd>
           </div>

@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { CC_Context } from "../context/SimpleSmartContract.js";
+import { CC_Context } from "../context/SmartContractConnector.js";
 import { ethers } from "ethers";
 
 const TestPage = () => {
@@ -9,6 +9,7 @@ const TestPage = () => {
     getCreditDetails,
     sellCredit,
     buyCredit,
+    expireCredit,
     currentAccount, 
     error 
   } = useContext(CC_Context);
@@ -19,6 +20,7 @@ const TestPage = () => {
   const [salePrice, setSalePrice] = useState("");
   const [saleCreditId, setSaleCreditId] = useState("");
   const [buyCreditId, setBuyCreditId] = useState("");
+  const [expireCreditId, setExpireCreditId] = useState("");
   const [creditDetails, setCreditDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [transactionStatus, setTransactionStatus] = useState("");
@@ -153,6 +155,43 @@ const TestPage = () => {
     } catch (error) {
       console.error("Error buying credit:", error);
       setTransactionStatus(`Failed to buy credit: ${error.message}`);
+    } finally {
+      setLoading(false);
+      setTimeout(() => setTransactionStatus(""), 5000);
+    }
+  };
+
+
+  const handleExpireCredit = async () => {
+    if (!expireCreditId) {
+      alert("Please enter a Credit ID to expire!");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setTransactionStatus("Initiating credit expiration...");
+
+      // Get credit details first to verify ownership
+      const details = await getCreditDetails(expireCreditId);
+
+      if (details.owner.toLowerCase() !== currentAccount.toLowerCase()) {
+        alert("Only the credit creator can expire this credit!");
+        return;
+      }
+
+      await expireCredit(expireCreditId);
+      
+      setTransactionStatus("Credit expired successfully!");
+      setExpireCreditId("");
+
+      // Refresh credit details if the expired credit is currently being viewed
+      if (expireCreditId === creditId) {
+        await handleGetCreditDetails();
+      }
+    } catch (error) {
+      console.error("Error expiring credit:", error);
+      setTransactionStatus(`Failed to expire credit: ${error.message}`);
     } finally {
       setLoading(false);
       setTimeout(() => setTransactionStatus(""), 5000);
@@ -363,6 +402,15 @@ const TestPage = () => {
                       </span>
                     </p>
                     <p style={{ margin: "0" }}>
+                      <strong>Creator:</strong> 
+                      <span style={{ 
+                        fontSize: "0.9em", 
+                        wordBreak: "break-all" 
+                      }}>
+                        {creditDetails.creator}
+                      </span>
+                    </p>
+                    <p style={{ margin: "0" }}>
                       <strong>Price:</strong> {ethers.formatEther(creditDetails.price)} ETH
                     </p>
                     <p style={{ margin: "0" }}>
@@ -374,6 +422,34 @@ const TestPage = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+
+          <div style={{ padding: "20px", backgroundColor: "white", borderRadius: "8px" }}>
+            <h2 style={{ textAlign: "center" }}>Expire Credit</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <input
+                type="number"
+                placeholder="Credit ID to Expire"
+                value={expireCreditId}
+                onChange={(e) => setExpireCreditId(e.target.value)}
+                style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ddd" }}
+              />
+              <button
+                onClick={handleExpireCredit}
+                disabled={loading}
+                style={{
+                  padding: "10px",
+                  backgroundColor: "#FF6347", // Tomato red to indicate expiration
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  opacity: loading ? 0.7 : 1
+                }}
+              >
+                {loading ? "Processing..." : "Expire Credit"}
+              </button>
             </div>
           </div>
         </div>

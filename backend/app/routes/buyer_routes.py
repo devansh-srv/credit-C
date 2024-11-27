@@ -19,7 +19,7 @@ def get_current_user():
 @jwt_required()
 def buyer_credits():
     credits = Credit.query.filter_by(is_active =True).all()
-    return jsonify([{"id": c.id, "name": c.name, "amount": c.amount, "price": c.price} for c in credits])
+    return jsonify([{"id": c.id, "name": c.name, "amount": c.amount, "price": c.price,"creator":c.creator_id} for c in credits])
 
 @buyer_bp.route('/api/buyer/purchase', methods=['POST'])
 @jwt_required()
@@ -34,7 +34,8 @@ def purchase_credit():
         purchased_credit = PurchasedCredit(
             user_id=user.id, 
             credit_id=credit.id, 
-            amount=credit.amount
+            amount=credit.amount,
+            creator_id=credit.creator_id
         )
         
         transaction = Transactions(
@@ -56,20 +57,25 @@ def purchase_credit():
 def get_purchased_credits():
     current_user = get_current_user()
     if not current_user:
-        return jsonify({"message":"Invalid token"}), 401
+        return jsonify({"message": "Invalid token"}), 401
 
     user = User.query.filter_by(username=current_user['username']).first()
     purchased_credits = PurchasedCredit.query.filter_by(user_id=user.id).all()
     credits = []
     for pc in purchased_credits:
         credit = Credit.query.get(pc.credit_id)
+        creator = User.query.get(pc.creator_id) if pc.creator_id else None
         credits.append({
             "id": credit.id,
             "name": credit.name,
             "amount": pc.amount,
-            "price": credit.price
+            "price": credit.price,
+            "creator": {
+                "id": creator.id,
+                "username": creator.username,
+                "email": creator.email
+            } if creator else None
         })
-        db.session.delete(credit)
     return jsonify(credits)
 
 @buyer_bp.route('/api/buyer/generate-certificate/<int:purchase_id>', methods=['GET'])
@@ -77,14 +83,22 @@ def get_purchased_credits():
 def generate_certificate(purchase_id):
     current_user = get_current_user()
     if not current_user:
-        return jsonify({"message" : "Invalid token"}),401
-    user = User.query.filter_by(username=current_user['username']).first()
+        return jsonify({"message": "Invalid token"}), 401
     
+    user = User.query.filter_by(username=current_user['username']).first()
     purchased_credit = PurchasedCredit.query.filter_by(id=purchase_id, user_id=user.id).first()
     if not purchased_credit:
         return jsonify({"message": "Purchase not found"}), 404
-    
+
     credit = Credit.query.get(purchased_credit.credit_id)
+    creator = User.query.get(purchased_credit.creator_id) if purchased_credit.creator_id else None
+
     certificate_data = generate_certificate_data(purchase_id, user, purchased_credit, credit)
+    certificate_data['creator'] = {
+        "id": creator.id,
+        "username": creator.username,
+        "email": creator.email
+    } if creator else None
     
     return jsonify(certificate_data), 200
+

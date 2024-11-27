@@ -14,23 +14,60 @@ def get_current_user():
 @admin_bp.route('/api/admin/credits', methods=['GET', 'POST'])
 @jwt_required()
 def manage_credits():
-    current_user  = get_current_user()
+    current_user = get_current_user()
     if current_user.get('role') != 'admin':
         return jsonify({"message": "Unauthorized"}), 403
 
-    if request.method == 'GET':
-        credits = Credit.query.filter_by(is_active = True).all()
-        return jsonify([{"id": c.id, "name": c.name, "amount": c.amount, "price": c.price,"creator":c.creator_id} for c in credits])
+    user = User.query.filter_by(username=current_user.get('username')).first()
 
+    # Ensure only credits created by this admin are visible
+    if request.method == 'GET':
+        credits = Credit.query.filter_by(creator_id=user.id).all()
+        return jsonify([{
+            "id": c.id,
+            "name": c.name,
+            "amount": c.amount,
+            "price": c.price,
+            "is_active": c.is_active,
+            "is_expired": c.is_expired,
+            "creator_id": c.creator_id
+        } for c in credits]), 200
+
+    # Allow the admin to create new credits
     if request.method == 'POST':
-        user_id = User.query.filter_by(username = current_user.get('username')).first()
-        user_id = str(user_id)
         data = request.json
-        # print(type(user_id))
-        new_credit = Credit(name=data['name'], amount=data['amount'], price=data['price'],creator_id = user_id)
+        new_credit = Credit(
+            name=data['name'], 
+            amount=data['amount'], 
+            price=data['price'], 
+            creator_id=user.id
+        )
         db.session.add(new_credit)
         db.session.commit()
         return jsonify({"message": "Credit created successfully"}), 201
+
+@admin_bp.route('/api/admin/credits/expire/<int:credit_id>', methods=['PATCH'])
+@jwt_required()
+def expire_credit(credit_id):
+    current_user = get_current_user()
+    if current_user.get('role') != 'admin':
+        return jsonify({"message": "Unauthorized"}), 403
+
+    user = User.query.filter_by(username=current_user.get('username')).first()
+    credit = Credit.query.get(credit_id)
+
+    if not credit:
+        return jsonify({"message": "Credit not found"}), 404
+
+    # Ensure only the creator admin can expire the credit
+    if credit.creator_id != user.id:
+        return jsonify({"message": "You do not have permission to expire this credit"}), 403
+
+    # Expire the credit
+    credit.is_active = False
+    credit.is_expired = True
+    db.session.commit()
+    return jsonify({"message": "Credit expired successfully"}), 200
 
 @admin_bp.route('/api/admin/transactions', methods=['GET'])
 @jwt_required()
