@@ -65,25 +65,32 @@ const AdminDashboard = ({ onLogout }) => {
   
   const handleExpireCredit = async (creditId) => {
     console.log(`Expire credit called for credit ID: ${creditId}`);
-    const SC_Credit_Id = creditId -1;
-    // Add your API call or logic to expire the credit here
-    try{
-      // call the smart contract function 
-      await expireCredit(SC_Credit_Id);
+    const SC_Credit_Id = creditId - 1;
+  
+    try {
       const response = await expireCreditApi(creditId);
       console.log(response.data);
+  
+      // Call the smart contract function
+      await expireCredit(SC_Credit_Id);
+  
       alert('Credit expired successfully!');
-
+  
       setMyCredits((prevCredits) =>
         prevCredits.map((credit) =>
           credit.id === creditId ? { ...credit, is_expired: true } : credit
         )
       );
-
-    } catch(error){
-      console.error('Failed to create credit:', error);
+    } catch (error) {
+      if (error.response && error.response.status === 400) {
+        // Display a popup with the error message
+        alert(`Error: ${error.response.data.message}`);
+      } else {
+        console.error('Failed to expire credit:', error);
+      }
     }
   };
+  
 
   const [transactions, setTransactions] = useState([]);
   useEffect(() => {

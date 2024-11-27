@@ -70,6 +70,8 @@ def get_purchased_credits():
             "name": credit.name,
             "amount": pc.amount,
             "price": credit.price,
+            "is_active": credit.is_active,
+            "is_expired": credit.is_expired,
             "creator": {
                 "id": creator.id,
                 "username": creator.username,

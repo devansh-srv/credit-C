@@ -56,9 +56,11 @@ def expire_credit(credit_id):
     user = User.query.filter_by(username=current_user.get('username')).first()
     credit = Credit.query.get(credit_id)
     pc = PurchasedCredit.query.get(credit_id)
+
     if not credit:
         return jsonify({"message": "Credit not found"}), 404
-
+    if not pc:
+        return jsonify({"message": "Credit can't be expired as it has not been sold yet"}), 400
     # Ensure only the creator admin can expire the credit
     if credit.creator_id != user.id:
         return jsonify({"message": "You do not have permission to expire this credit"}), 403
