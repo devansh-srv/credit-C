@@ -23,9 +23,11 @@ export const getAdminCredits = () => api.get('/admin/credits');
 export const createAdminCredit = (creditData) => api.post('/admin/credits', creditData);
 export const getBuyerCredits = () => api.get('/buyer/credits');
 export const purchaseCredit = (purchaseData) => api.post('/buyer/purchase', purchaseData);
+export const sellCreditApi = (sellData) => api.patch('/buyer/sell', sellData);
+export const removeSaleCreditApi = (removeData) => api.patch('/buyer/remove-from-sale', removeData);
 export const getPurchasedCredits = () => api.get('/buyer/purchased');
 export const getTransactions = () => api.get('/admin/transactions');
-export const generateCertificate = (purchaseId) => api.get(`/buyer/generate-certificate/${purchaseId}`);
+export const generateCertificate = (creditId) => api.get(`/buyer/generate-certificate/${creditId}`);
 export const expireCreditApi = (expireCreditId) => api.patch(`/admin/credits/expire/${expireCreditId}`);
 
 export default api;

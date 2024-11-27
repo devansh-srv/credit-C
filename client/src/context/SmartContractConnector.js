@@ -72,11 +72,11 @@ export const CCProvider = ({ children }) => {
             const contract = fetchContract(signer);
 
             // Convert price to wei
-            // const priceInWei = ethers.parseEther(price.toString());
+            const priceInWei = ethers.parseEther(price.toString());
 
             const transaction = await contract.sellCredit(
                 creditId,
-                price,
+                priceInWei,
                 {
                     gasLimit: 300000
                 }
