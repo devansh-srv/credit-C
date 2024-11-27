@@ -8,6 +8,9 @@ class PurchasedCredit(db.Model):
     credit_id = db.Column(db.Integer, db.ForeignKey('credits.id'), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     purchase_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    is_expired = db.Column(db.Boolean,default = False)
+    creator_id = db.Column(db.Integer,db.ForeignKey('credits.creator_id'),nullable= True)
+    creator = db.relationship('User', backref='purchased_credits')
 
 class Transactions(db.Model):
     __tablename__ = 'transactions'
