@@ -112,15 +112,21 @@ const BuyerDashboard = ({ onLogout }) => {
           <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
             <dt className="text-sm font-medium text-gray-500">Purchased Credits</dt>
             <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-              {purchasedCredits.length > 0 ? (
-                <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
-                  {purchasedCredits.map((credit, index) => (
-                    <li key={index} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
-                      <div className="w-0 flex-1 flex items-center">
-                        <span className="ml-2 flex-1 w-0 truncate">
-                          {credit.name} - Amount: {credit.amount}, Price: ${credit.price}
-                        </span>
-                      </div>
+            {purchasedCredits.length > 0 ? (
+              <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
+                {purchasedCredits.map((credit, index) => (
+                  <li 
+                    key={index} 
+                    className={`pl-3 pr-4 py-3 flex items-center justify-between text-sm ${
+                      credit.is_expired ? 'bg-[#D4EDDA]' : ''
+                    }`}
+                  >
+                    <div className="w-0 flex-1 flex items-center">
+                      <span className="ml-2 flex-1 w-0 truncate">
+                        {credit.name} - Amount: {credit.amount}, Price: ${credit.price}
+                      </span>
+                    </div>
+                    {credit.is_expired && (
                       <div className="ml-4 flex-shrink-0">
                         <button 
                           onClick={() => handleGenerateCertificate(credit.id)} 
@@ -129,12 +135,14 @@ const BuyerDashboard = ({ onLogout }) => {
                           Generate Certificate
                         </button>
                       </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No credits purchased yet.</p>
-              )}
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No credits purchased yet.</p>
+            )}
+
             </dd>
           </div>
           
