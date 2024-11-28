@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { getBuyerCredits, purchaseCredit, getPurchasedCredits, generateCertificate } from '../api/api';
+import { getBuyerCredits, purchaseCredit, sellCreditApi, removeSaleCreditApi, getPurchasedCredits, generateCertificate } from '../api/api';
 import { CC_Context } from "../context/SmartContractConnector.js";
 import { ethers } from "ethers";
+
 
 const BuyerDashboard = ({ onLogout }) => {
   const [availableCredits, setAvailableCredits] = useState([]);
@@ -16,6 +17,7 @@ const BuyerDashboard = ({ onLogout }) => {
     getNextCreditId,
     getPrice,
     sellCredit,
+    removeFromSale,
     buyCredit,
     currentAccount
     // error 
@@ -27,8 +29,16 @@ const BuyerDashboard = ({ onLogout }) => {
         getBuyerCredits(),
         getPurchasedCredits()
       ]);
+
+      const creditsWithSalePrice = purchasedResponse.data.map(credit => ({
+        ...credit,
+        salePrice: '', // Initialize salePrice if not present
+      }));
+
+      setPurchasedCredits(creditsWithSalePrice);
       setAvailableCredits(availableResponse.data);
-      setPurchasedCredits(purchasedResponse.data);
+
+      // setPurchasedCredits(purchasedResponse.data);
     } catch (error) {
       console.error('Failed to fetch credits:', error);
       setError('Failed to fetch credits. Please try again.');
@@ -57,10 +67,10 @@ const BuyerDashboard = ({ onLogout }) => {
     }
   };
 
-  const handleGenerateCertificate = async (purchaseId) => {
+  const handleGenerateCertificate = async (creditId) => {
     try {
       setError(null);
-      const response = await generateCertificate(purchaseId);
+      const response = await generateCertificate(creditId);
       setCertificateData(response.data);
     } catch (error) {
       console.error('Failed to generate certificate:', error);
@@ -68,6 +78,70 @@ const BuyerDashboard = ({ onLogout }) => {
     }
   };
 
+  ///The code from here till return might be a little sketchy cause i dont know how it works mf
+  const handleSellInput = (creditId) => {
+    setPurchasedCredits((prevCredits) =>
+      prevCredits.map((credit) =>
+        credit.id === creditId ? { ...credit, showSellInput: !credit.showSellInput } : credit
+      )
+    );
+  };
+
+  const handlePriceChange = (creditId, price) => {
+    setPurchasedCredits((prevCredits) =>
+      prevCredits.map((credit) =>
+        credit.id === creditId ? { ...credit, salePrice: price } : credit
+      )
+    );
+  };
+  
+  const confirmSale = async (creditId) => {
+    try{
+      const updatedCredits = purchasedCredits.map((credit) =>
+        credit.id === creditId
+          ? { ...credit, is_active: true, showSellInput: false, salePrice: credit.salePrice || '' }
+          : credit
+      );
+      setPurchasedCredits(updatedCredits);
+    
+      // Log the updated credit
+      const updatedCredit = updatedCredits.find((credit) => credit.id === creditId);
+      console.log(`Credit put on sale with price: ${updatedCredit.salePrice}`);
+      
+      // Call API to mark credit as on sale in the backend and contract
+      await sellCredit(creditId-1, updatedCredit.salePrice);
+      const respose = await sellCreditApi({credit_id: creditId, salePrice: updatedCredit.salePrice});
+      console.log(respose);
+      await fetchAllCredits();
+    } catch(error){
+        console.error("Can't sale credit: ", error);
+        setError('Failed to sell credit');
+    }
+
+    
+  };
+  
+  const handleRemoveFromSale = async (creditId) => {
+    try{
+      setPurchasedCredits((prevCredits) =>
+        prevCredits.map((credit) =>
+          credit.id === creditId ? { ...credit, is_active: false, salePrice: null } : credit
+        )
+      );
+      
+      // Call API to remove the credit from sale in the backend
+      await removeFromSale(creditId-1);
+      await removeSaleCreditApi({credit_id: creditId})
+      console.log(`Removed credit ID ${creditId} from sale`);
+      await fetchAllCredits();
+    } catch(error){
+      console.error("We shouldnt be getting error here T:T : ", error);
+        setError('Failed to remove credit');
+    }
+      
+  };
+
+  
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
       <div className="px-4 py-5 sm:px-6">
@@ -114,9 +188,9 @@ const BuyerDashboard = ({ onLogout }) => {
             <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
             {purchasedCredits.length > 0 ? (
               <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
-                {purchasedCredits.map((credit, index) => (
+                {purchasedCredits.map((credit) => (
                   <li 
-                    key={index} 
+                    key={credit.id} 
                     className={`pl-3 pr-4 py-3 flex items-center justify-between text-sm ${
                       credit.is_expired ? 'bg-[#D4EDDA]' : ''
                     }`}
@@ -126,22 +200,58 @@ const BuyerDashboard = ({ onLogout }) => {
                         {credit.name} - Amount: {credit.amount}, Price: ${credit.price}
                       </span>
                     </div>
-                    {credit.is_expired && (
-                      <div className="ml-4 flex-shrink-0">
+
+                    <div className="ml-4 flex-shrink-0">
+                      {credit.is_expired ? (
                         <button 
                           onClick={() => handleGenerateCertificate(credit.id)} 
                           className="btn btn-secondary"
                         >
                           Generate Certificate
                         </button>
-                      </div>
-                    )}
+                      ) : credit.is_active ? (
+                        <button 
+                          onClick={() => handleRemoveFromSale(credit.id)} 
+                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                        >
+                          Remove from Sale
+                        </button>
+                      ) : (
+                        <div className="flex flex-col">
+                          <button 
+                            onClick={() => handleSellInput(credit.id)} 
+                            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                          >
+                            Sell
+                          </button>
+                          {credit.showSellInput && (
+                            <div className="mt-2">
+                              <input 
+                                type="number" 
+                                placeholder="Enter price" 
+                                className="border rounded p-1"
+                                value={credit.salePrice || ''}
+                                onChange={(e) => handlePriceChange(credit.id, e.target.value)}
+                              />
+                              <button 
+                                onClick={() => confirmSale(credit.id)} 
+                                className="ml-2 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                              >
+                                Confirm
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
             ) : (
               <p>No credits purchased yet.</p>
             )}
+
+
 
             </dd>
           </div>

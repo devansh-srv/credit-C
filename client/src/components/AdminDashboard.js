@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { getAdminCredits, createAdminCredit, getTransactions, expireCreditApi } from '../api/api';
 import { CC_Context } from "../context/SmartContractConnector.js";
+import Swal from 'sweetalert2';
 import { ethers } from "ethers";
 
 const AdminDashboard = ({ onLogout }) => {
@@ -74,7 +75,12 @@ const AdminDashboard = ({ onLogout }) => {
       // Call the smart contract function
       await expireCredit(SC_Credit_Id);
   
-      alert('Credit expired successfully!');
+      // SweetAlert for success
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: 'Credit expired successfully!',
+      });
   
       setMyCredits((prevCredits) =>
         prevCredits.map((credit) =>
@@ -84,7 +90,11 @@ const AdminDashboard = ({ onLogout }) => {
     } catch (error) {
       if (error.response && error.response.status === 400) {
         // Display a popup with the error message
-        alert(`Error: ${error.response.data.message}`);
+        Swal.fire({
+          icon: 'error',
+          title: 'Oops...',
+          text: error.response.data.message,
+        });
       } else {
         console.error('Failed to expire credit:', error);
       }
