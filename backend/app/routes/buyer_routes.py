@@ -6,6 +6,10 @@ from app.models.transaction import PurchasedCredit
 from app.models.transaction import Transactions
 from app.utilis.certificate_generator import generate_certificate_data
 import json
+import io
+import base64
+import xhtml2pdf.pisa as pisa
+from weasyprint import HTML
 from app import db
 
 buyer_bp = Blueprint('buyer_bp', __name__)
@@ -156,7 +160,7 @@ def generate_certificate(creditId):
     user = User.query.filter_by(username=current_user['username']).first()
     purchased_credit = PurchasedCredit.query.filter_by(credit_id=creditId, user_id=user.id).first()
     if not purchased_credit:
-        return jsonify({"message": "Purchase with your name not found"}), 404
+        return jsonify({"message": f"Credit with {creditId} was never purchased"}), 404
 
     credit = Credit.query.get(purchased_credit.credit_id)
     if credit is None:
@@ -173,4 +177,36 @@ def generate_certificate(creditId):
     # } if creator else None
     
     return jsonify(certificate_data), 200
+@buyer_bp.route('/api/buyer/download-certificate/<int:creditId>',methods=['GET'])
+@jwt_required()
+def download_certificate(creditId):
+    current_user = get_current_user()
+    if not current_user:
+        return jsonify({"message": "Invalid token"}), 401
+    
+    user = User.query.filter_by(username=current_user['username']).first()
+    purchased_credit = PurchasedCredit.query.filter_by(credit_id=creditId, user_id=user.id).first()
+    if not purchased_credit:
+        return jsonify({"message": f"Credit with {creditId} was never purchased"}), 404
 
+    credit = Credit.query.get(purchased_credit.credit_id)
+    if credit is None:
+        return jsonify({"message":"No such credit found"}),404
+    creator = User.query.get(purchased_credit.creator_id) if purchased_credit.creator_id else None
+    
+    certificate_data = generate_certificate_data(purchased_credit.id, user, purchased_credit, credit) if credit.is_expired else None
+    if certificate_data is None:
+        return jsonify({"message":f"No credit with {credit.id} has expired"}), 404
+    
+    output_buffer = io.BytesIO()
+    html_content = certificate_data['certificate_html']
+    # pisa.CreatePDF(
+    #     html_content,
+    #     dest=output_buffer
+    # )
+    HTML(string=html_content).write_pdf(output_buffer)
+    output_buffer.seek(0)
+    return jsonify({
+        "filename":f"Carbon_Credit_Certificate_{purchased_credit.id}.pdf",
+        "pdf_base64":base64.b64encode(output_buffer.getvalue()).decode('utf-8')
+    }),200

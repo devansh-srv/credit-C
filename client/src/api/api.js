@@ -28,6 +28,7 @@ export const removeSaleCreditApi = (removeData) => api.patch('/buyer/remove-from
 export const getPurchasedCredits = () => api.get('/buyer/purchased');
 export const getTransactions = () => api.get('/admin/transactions');
 export const generateCertificate = (creditId) => api.get(`/buyer/generate-certificate/${creditId}`);
+export const downloadCertificate = (creditId) => api.get(`/buyer/download-certificate/${creditId}`);
 export const expireCreditApi = (expireCreditId) => api.patch(`/admin/credits/expire/${expireCreditId}`);
 
 export default api;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { getBuyerCredits, purchaseCredit, sellCreditApi, removeSaleCreditApi, getPurchasedCredits, generateCertificate } from '../api/api';
+import { getBuyerCredits, purchaseCredit, sellCreditApi, removeSaleCreditApi, getPurchasedCredits, generateCertificate, downloadCertificate } from '../api/api';
 import { CC_Context } from "../context/SmartContractConnector.js";
 import { ethers } from "ethers";
 
@@ -10,9 +10,9 @@ const BuyerDashboard = ({ onLogout }) => {
   const [certificateData, setCertificateData] = useState(null);
   const [error, setError] = useState(null);
 
-  const { 
-    connectWallet, 
-    generateCredit, 
+  const {
+    connectWallet,
+    generateCredit,
     getCreditDetails,
     getNextCreditId,
     getPrice,
@@ -54,11 +54,11 @@ const BuyerDashboard = ({ onLogout }) => {
       setError(null);
       //NOTE: the -1 is temporary
       // const price = await getPrice();
-      const credit = await getCreditDetails(creditId-1);
+      const credit = await getCreditDetails(creditId - 1);
       // Convert the price from wei to ether for the transaction
       const priceInEther = ethers.formatEther(credit.price);
-      console.log("id, price: ", creditId-1, priceInEther);
-      await buyCredit(creditId-1, priceInEther);
+      console.log("id, price: ", creditId - 1, priceInEther);
+      await buyCredit(creditId - 1, priceInEther);
       await purchaseCredit({ credit_id: creditId, amount: 1 });
       await fetchAllCredits(); // Refresh both available and purchased credits
     } catch (error) {
@@ -77,7 +77,22 @@ const BuyerDashboard = ({ onLogout }) => {
       setError('Failed to generate certificate. Please try again.');
     }
   };
+  const handleDownloadCertificate = async (creditId) => {
+    try {
+      setError(null);
+      const response = await downloadCertificate(creditId);
+      const linksource = `data:application/pdf;base64,${response.data.pdf_base64}`;
+      const downloadLink = document.createElement("a");
+      const fileName = response.data.filename;
+      downloadLink.href = linksource;
+      downloadLink.download = fileName;
+      downloadLink.click();
 
+    } catch (error) {
+      console.error("Failed to download Certificate: ", error);
+      setError('Failed to download certificate. Please try again.');
+    }
+  }
   ///The code from here till return might be a little sketchy cause i dont know how it works mf
   const handleSellInput = (creditId) => {
     setPurchasedCredits((prevCredits) =>
@@ -94,83 +109,83 @@ const BuyerDashboard = ({ onLogout }) => {
       )
     );
   };
-  
+
   const confirmSale = async (creditId) => {
-    try{
+    try {
       const updatedCredits = purchasedCredits.map((credit) =>
         credit.id === creditId
           ? { ...credit, is_active: true, showSellInput: false, salePrice: credit.salePrice || '' }
           : credit
       );
       setPurchasedCredits(updatedCredits);
-    
+
       // Log the updated credit
       const updatedCredit = updatedCredits.find((credit) => credit.id === creditId);
       console.log(`Credit put on sale with price: ${updatedCredit.salePrice}`);
-      
+
       // Call API to mark credit as on sale in the backend and contract
-      await sellCredit(creditId-1, updatedCredit.salePrice);
-      const respose = await sellCreditApi({credit_id: creditId, salePrice: updatedCredit.salePrice});
+      await sellCredit(creditId - 1, updatedCredit.salePrice);
+      const respose = await sellCreditApi({ credit_id: creditId, salePrice: updatedCredit.salePrice });
       console.log(respose);
       await fetchAllCredits();
-    } catch(error){
-        console.error("Can't sale credit: ", error);
-        setError('Failed to sell credit');
+    } catch (error) {
+      console.error("Can't sale credit: ", error);
+      setError('Failed to sell credit');
     }
 
-    
+
   };
-  
+
   const handleRemoveFromSale = async (creditId) => {
-    try{
+    try {
       setPurchasedCredits((prevCredits) =>
         prevCredits.map((credit) =>
           credit.id === creditId ? { ...credit, is_active: false, salePrice: null } : credit
         )
       );
-      
+
       // Call API to remove the credit from sale in the backend
-      await removeFromSale(creditId-1);
-      await removeSaleCreditApi({credit_id: creditId})
+      await removeFromSale(creditId - 1);
+      await removeSaleCreditApi({ credit_id: creditId })
       console.log(`Removed credit ID ${creditId} from sale`);
       await fetchAllCredits();
-    } catch(error){
+    } catch (error) {
       console.error("We shouldnt be getting error here T:T : ", error);
-        setError('Failed to remove credit');
+      setError('Failed to remove credit');
     }
-      
+
   };
 
-  
+
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-      <div className="px-4 py-5 sm:px-6">
-        <h3 className="text-lg leading-6 font-medium text-gray-900">Buyer Dashboard</h3>
+    <div className="overflow-hidden bg-white shadow sm:rounded-lg">
+      <div className="py-5 px-4 sm:px-6">
+        <h3 className="text-lg font-medium leading-6 text-gray-900">Buyer Dashboard</h3>
         <p className="mt-1 max-w-2xl text-sm text-gray-500">View and purchase carbon credits</p>
       </div>
-      
+
       {error && (
-        <div className="px-4 py-3 bg-red-50 text-red-700">
+        <div className="py-3 px-4 text-red-700 bg-red-50">
           {error}
         </div>
       )}
 
       <div className="border-t border-gray-200">
         <dl>
-          <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <div className="py-5 px-4 bg-gray-50 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
             <dt className="text-sm font-medium text-gray-500">Available Credits</dt>
-            <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-              <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
+            <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+              <ul className="rounded-md border border-gray-200 divide-y divide-gray-200">
                 {availableCredits.map((credit) => (
-                  <li key={credit.id} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
-                    <div className="w-0 flex-1 flex items-center">
-                      <span className="ml-2 flex-1 w-0 truncate">
+                  <li key={credit.id} className="flex justify-between items-center py-3 pr-4 pl-3 text-sm">
+                    <div className="flex flex-1 items-center w-0">
+                      <span className="flex-1 ml-2 w-0 truncate">
                         {credit.name} - Amount: {credit.amount}, Price: ${credit.price}
                       </span>
                     </div>
-                    <div className="ml-4 flex-shrink-0">
-                      <button 
-                        onClick={() => handleBuyCredit(credit.id)} 
+                    <div className="flex-shrink-0 ml-4">
+                      <button
+                        onClick={() => handleBuyCredit(credit.id)}
                         className="btn btn-secondary"
                         disabled={credit.amount <= 0}
                       >
@@ -182,86 +197,93 @@ const BuyerDashboard = ({ onLogout }) => {
               </ul>
             </dd>
           </div>
-          
-          <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-            <dt className="text-sm font-medium text-gray-500">Purchased Credits</dt>
-            <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-            {purchasedCredits.length > 0 ? (
-              <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
-                {purchasedCredits.map((credit) => (
-                  <li 
-                    key={credit.id} 
-                    className={`pl-3 pr-4 py-3 flex items-center justify-between text-sm ${
-                      credit.is_expired ? 'bg-[#D4EDDA]' : ''
-                    }`}
-                  >
-                    <div className="w-0 flex-1 flex items-center">
-                      <span className="ml-2 flex-1 w-0 truncate">
-                        {credit.name} - Amount: {credit.amount}, Price: ${credit.price}
-                      </span>
-                    </div>
 
-                    <div className="ml-4 flex-shrink-0">
-                      {credit.is_expired ? (
-                        <button 
-                          onClick={() => handleGenerateCertificate(credit.id)} 
-                          className="btn btn-secondary"
-                        >
-                          Generate Certificate
-                        </button>
-                      ) : credit.is_active ? (
-                        <button 
-                          onClick={() => handleRemoveFromSale(credit.id)} 
-                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                        >
-                          Remove from Sale
-                        </button>
-                      ) : (
-                        <div className="flex flex-col">
-                          <button 
-                            onClick={() => handleSellInput(credit.id)} 
-                            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+          <div className="py-5 px-4 bg-white sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt className="text-sm font-medium text-gray-500">Purchased Credits</dt>
+            <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+              {purchasedCredits.length > 0 ? (
+                <ul className="rounded-md border border-gray-200 divide-y divide-gray-200">
+                  {purchasedCredits.map((credit) => (
+                    <li
+                      key={credit.id}
+                      className={`pl-3 pr-4 py-3 flex items-center justify-between text-sm ${credit.is_expired ? 'bg-[#D4EDDA]' : ''
+                        }`}
+                    >
+                      <div className="flex flex-1 items-center w-0">
+                        <span className="flex-1 ml-2 w-0 truncate">
+                          {credit.name} - Amount: {credit.amount}, Price: ${credit.price}
+                        </span>
+                      </div>
+
+                      <div className="flex-shrink-0 ml-4">
+                        {credit.is_expired ? (
+                          <>
+                            <button
+                              onClick={() => handleGenerateCertificate(credit.id)}
+                              className="btn btn-secondary"
+                            >
+                              Generate Certificate
+                            </button>
+                            <button
+                              onClick={() => handleDownloadCertificate(credit.id)}
+                              className="btn btn-secondary"
+                            >
+                              Download Certificate
+                            </button>
+                          </>
+                        ) : credit.is_active ? (
+                          <button
+                            onClick={() => handleRemoveFromSale(credit.id)}
+                            className="py-1 px-3 text-white bg-red-500 rounded hover:bg-red-600"
                           >
-                            Sell
+                            Remove from Sale
                           </button>
-                          {credit.showSellInput && (
-                            <div className="mt-2">
-                              <input 
-                                type="number" 
-                                placeholder="Enter price" 
-                                className="border rounded p-1"
-                                value={credit.salePrice || ''}
-                                onChange={(e) => handlePriceChange(credit.id, e.target.value)}
-                              />
-                              <button 
-                                onClick={() => confirmSale(credit.id)} 
-                                className="ml-2 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                              >
-                                Confirm
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No credits purchased yet.</p>
-            )}
+                        ) : (
+                          <div className="flex flex-col">
+                            <button
+                              onClick={() => handleSellInput(credit.id)}
+                              className="py-1 px-3 text-white bg-blue-500 rounded hover:bg-blue-600"
+                            >
+                              Sell
+                            </button>
+                            {credit.showSellInput && (
+                              <div className="mt-2">
+                                <input
+                                  type="number"
+                                  placeholder="Enter price"
+                                  className="p-1 rounded border"
+                                  value={credit.salePrice || ''}
+                                  onChange={(e) => handlePriceChange(credit.id, e.target.value)}
+                                />
+                                <button
+                                  onClick={() => confirmSale(credit.id)}
+                                  className="py-1 px-3 ml-2 text-white bg-green-500 rounded hover:bg-green-600"
+                                >
+                                  Confirm
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No credits purchased yet.</p>
+              )}
 
 
 
             </dd>
           </div>
-          
+
           {certificateData && (
-            <div className="mt-6 bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <div className="py-5 px-4 mt-6 bg-white sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
               <dt className="text-sm font-medium text-gray-500">Certificate</dt>
-              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                <div 
-                  className="border rounded-md p-4"
+              <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+                <div
+                  className="p-4 rounded-md border"
                   dangerouslySetInnerHTML={{ __html: certificateData.certificate_html }}
                 />
               </dd>
@@ -269,7 +291,7 @@ const BuyerDashboard = ({ onLogout }) => {
           )}
         </dl>
       </div>
-      <div className="px-4 py-3 bg-gray-50 text-right sm:px-6">
+      <div className="py-3 px-4 text-right bg-gray-50 sm:px-6">
         <button onClick={onLogout} className="btn btn-secondary">
           Logout
         </button>
