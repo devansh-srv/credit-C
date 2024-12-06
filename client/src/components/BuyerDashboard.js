@@ -261,7 +261,11 @@ const BuyerDashboard = ({ onLogout }) => {
                                 >
                                   Confirm
                                 </button>
+                                <p className="mt-1 text-sm text-gray-500">
+                                  You will get 90% of value, the other 10% will go to creator
+                                </p>
                               </div>
+                              //text here 
                             )}
                           </div>
                         )}
