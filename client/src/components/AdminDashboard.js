@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { getAdminCredits, createAdminCredit, getTransactions, expireCreditApi } from '../api/api';
+import { getAdminCredits, createAdminCredit, getTransactions, expireCreditApi, verifyBeforeExpire } from '../api/api';
 import { CC_Context } from "../context/SmartContractConnector.js";
 import Swal from 'sweetalert2';
 import { ethers } from "ethers";
@@ -19,6 +19,15 @@ const AdminDashboard = ({ onLogout }) => {
   } = useContext(CC_Context);
 
   const [myCredits, setMyCredits] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedCredit, setSelectedCredit] = useState(null);
+  const [expirationData, setExpirationData] = useState({
+    creditName: "",
+    amountReduced: "",
+    password: "",
+  });
+
+
   useEffect(() => {
     const fetchCredits = async () => {
       try {
@@ -63,7 +72,59 @@ const AdminDashboard = ({ onLogout }) => {
     setNewCredit({ ...newCredit, [e.target.name]: e.target.value });
   };
 
-  
+  const openModal = (credit) => {
+    setSelectedCredit(credit);
+    console.log("selected credit:", selectedCredit);
+    setModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setModalVisible(false);
+    setExpirationData({ creditName: "", amountReduced: "", password: "" });
+  };
+
+  const handleModalInputChange = (e) => {
+    const { name, value } = e.target;
+    setExpirationData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmitRequest = async () => {
+    
+    try {
+      const { creditName, amountReduced, password } = expirationData;
+
+      if (!creditName || !amountReduced || !password) {
+        Swal.fire({
+          icon: "warning",
+          title: "Missing Fields",
+          text: "Please fill in all fields.",
+        });
+        return;
+      }
+
+      if (creditName != selectedCredit.name){
+        Swal.fire({
+          icon: "warning",
+          title: "Name Error",
+          text: "Name name you entered doesnt match the credit name",
+        });
+        return;
+      }
+      // console.log("before nogga ");
+      const response = await verifyBeforeExpire(expirationData);
+
+      console.log("verifyBeforeExpire says:", response.data["message"])
+      // Close the modal
+      closeModal();
+
+      // Proceed with original expireCredit logic
+      await handleExpireCredit(selectedCredit.id);
+
+    } catch (error) {
+      console.error("Error expiring credit:", error.response.data["message"]);
+    }
+  };
+
   const handleExpireCredit = async (creditId) => {
     console.log(`Expire credit called for credit ID: ${creditId}`);
     const SC_Credit_Id = creditId - 1;
@@ -179,23 +240,21 @@ const AdminDashboard = ({ onLogout }) => {
                   </div>
                 {!credit.is_expired && (
                   <button
-                    onClick={() => handleExpireCredit(credit.id)}
-                    className="ml-4 px-3 py-1 text-white rounded hover:opacity-90"
-                    style={{ backgroundColor: '#415e02' }} // Replace with your hex color
-                  >
+                  onClick={() => openModal(credit)}
+                  className="ml-4 px-3 py-1 text-white rounded hover:opacity-90"
+                  style={{ backgroundColor: "#415e02" }}
+                >
                     Expire Credit
                 </button>
                 )}
               </li>
             ))}
-
-
-
               </ul>
             </dd>
           </div>
         </dl>
       </div>
+
       <div className="px-4 py-3 bg-gray-50 text-right sm:px-6">
         <button onClick={onLogout} className="btn btn-secondary">
           Logout
@@ -217,6 +276,55 @@ const AdminDashboard = ({ onLogout }) => {
           </ul>
         </dd>
       </div>
+
+
+      {modalVisible && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-75">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Expire Credit</h3>
+            <div className="space-y-4">
+              <input
+                type="text"
+                name="creditName"
+                placeholder="Credit Name"
+                className="w-full p-2 border rounded"
+                value={expirationData.creditName}
+                onChange={handleModalInputChange}
+              />
+              <input
+                type="number"
+                name="amountReduced"
+                placeholder="Amount Reduced"
+                className="w-full p-2 border rounded"
+                value={expirationData.amountReduced}
+                onChange={handleModalInputChange}
+              />
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                className="w-full p-2 border rounded"
+                value={expirationData.password}
+                onChange={handleModalInputChange}
+              />
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={closeModal}
+                  className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmitRequest}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Submit Request
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app import db
+from app import db, bcrypt
 from app.models.credit import Credit
 from app.models.transaction import PurchasedCredit, Transactions
 from app.models.user import User
@@ -93,3 +93,23 @@ def get_transactions():
     return jsonify(transaction_list)
 
 
+@admin_bp.route('/api/admin/expire-req', methods=['POST'])
+@jwt_required()
+def check_request():
+    data = request.json
+
+    current_user = get_current_user()
+    if current_user.get('role') != 'admin':
+        return jsonify({"message": "Unauthorized"}), 403
+
+    username = current_user.get('username')
+    # Fetch user details from the database
+    user = User.query.filter_by(username=username).first()
+
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    #check if the given password was true 
+    if bcrypt.check_password_hash(user.password, data['password']):
+        return jsonify({"message": "User verified succesfully! can proceed to expire credit"}), 200
+    return jsonify({"message": "Invalid credentials"}), 401
