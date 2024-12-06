@@ -30,5 +30,6 @@ export const getTransactions = () => api.get('/admin/transactions');
 export const generateCertificate = (creditId) => api.get(`/buyer/generate-certificate/${creditId}`);
 export const downloadCertificate = (creditId) => api.get(`/buyer/download-certificate/${creditId}`);
 export const expireCreditApi = (expireCreditId) => api.patch(`/admin/credits/expire/${expireCreditId}`);
+export const verifyBeforeExpire = (verificationData) => api.post(`/admin/expire-req`, verificationData);
 
 export default api;
