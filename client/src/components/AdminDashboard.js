@@ -21,6 +21,7 @@ const AdminDashboard = ({ onLogout }) => {
   const [myCredits, setMyCredits] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedCredit, setSelectedCredit] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [expirationData, setExpirationData] = useState({
     creditName: "",
     amountReduced: "",
@@ -72,9 +73,22 @@ const AdminDashboard = ({ onLogout }) => {
     setNewCredit({ ...newCredit, [e.target.name]: e.target.value });
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0]; // Get the first file selected
+    if (file && file.type === "application/pdf") {
+      setSelectedFile(file);
+    } else {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid File",
+        text: "Please upload a valid PDF file.",
+      });
+    }
+  };
+
   const openModal = (credit) => {
     setSelectedCredit(credit);
-    console.log("selected credit:", selectedCredit);
+    // console.log("selected credit:", selectedCredit);
     setModalVisible(true);
   };
 
@@ -302,11 +316,23 @@ const AdminDashboard = ({ onLogout }) => {
               <input
                 type="password"
                 name="password"
-                placeholder="Password"
+                placeholder="Your Password"
                 className="w-full p-2 border rounded"
                 value={expirationData.password}
                 onChange={handleModalInputChange}
               />
+              
+              {/* File Upload Input for PDF */}
+              <br/><br/><br/>
+              <p className="mt-1 text-sm text-black-500"> Add a document proof of expiration for Audit:</p>
+              <input
+                type="file"
+                name="pdfFile"
+                accept="application/pdf"
+                className="w-full p-2 border rounded"
+                onChange={handleFileChange}  // Handle file change
+              />
+              
               <div className="flex justify-end space-x-2">
                 <button
                   onClick={closeModal}
