@@ -25,3 +25,28 @@ It later evolved into voluntary markets and cap-and-trade systems, allowing comp
 
 ### Workflow Diagram:
 ![Flow diagram](https://github.com/user-attachments/assets/150eb965-a285-4da7-a434-14eb18890f79)
+
+# Tech Stack
+### Smart Contract:
+*Language*: Solidity  
+*Testing and Deployment*: Hardhat  
+
+<img src="https://github.com/user-attachments/assets/e31ed5c9-0135-4911-8be5-14e06fb6d1a2" alt="Image 1" height="50">  
+<img src="https://github.com/user-attachments/assets/130f7e42-eac1-4000-968b-91c1a891fab3" alt="Image 2" height="50">
+
+### Front-end:
+*Framework*: ReactJS <br>
+*libraries*: EthersJS 
+
+<img src="https://github.com/user-attachments/assets/26c3cdd9-86d2-4a62-b7e8-1574866af61c" alt="Image 1" height="50">
+    <img src="https://github.com/user-attachments/assets/f39f222c-0790-4779-909e-7c8c4687620b" alt="Image 1" height="50">  
+
+
+### Back-end:
+*Framework*: Python-Flask <br>
+*Database*: SQLite 
+
+<img src="https://www.pngitem.com/pimgs/m/159-1595977_flask-python-logo-hd-png-download.png" alt="Image 1" height="50"> <t> <img src="https://github.com/user-attachments/assets/8957e289-ce99-4bca-8db1-457449ed5bab" alt="Image 1" height="50">
+
+
+
