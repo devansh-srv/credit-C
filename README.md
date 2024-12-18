@@ -25,6 +25,9 @@ It later evolved into voluntary markets and cap-and-trade systems, allowing comp
 
 ### Workflow Diagram:
 ![Flow diagram](https://github.com/user-attachments/assets/150eb965-a285-4da7-a434-14eb18890f79)
+<br>
+### Sequence Diagram:
+![Sequence diagram (1)](https://github.com/user-attachments/assets/43ac8bd4-a24c-4416-a607-5263a31e3cf2)
 
 # Tech Stack
 ### Smart Contract:
