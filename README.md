@@ -90,15 +90,17 @@ Learn more about about hardhhat and for troubleshooting check [here](https://har
    - ChainID: `31337`
    - Name your network currency
    - Save network
+  
+     
    ![image](https://github.com/user-attachments/assets/ebe78e0b-9e32-4edc-b00e-fb84fd5ee32a)
 
 ### Back-end:
 Go to backend folder
 1. Create virtual env (not needed in windows):
-  ```
+   ```
    pip install virtualenv
-    python<version> -m venv <virtual-environment-name>
-  ```
+   python<version> -m venv <virtual-environment-name>
+   ```
 2. Activate the virtual env:
    ```
    source env/bin/activate
